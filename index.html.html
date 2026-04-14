@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>P-Store Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1117;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+button,select,input,textarea{font-family:inherit}
+select,input{background:#0f1117;border:1px solid #1e2535;border-radius:8px;padding:10px 12px;color:#e2e8f0;font-size:14px;width:100%}
+select:focus,input:focus{outline:2px solid #3b82f6;border-color:#3b82f6}
+option{background:#161b27}
+.header{background:#161b27;border-bottom:1px solid #1e2535;padding:0 24px}
+.header-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.logo-title{font-weight:700;font-size:16px}
+.logo-sub{font-size:11px;color:#64748b;font-family:monospace}
+.sync-wrap{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b}
+.dot{width:8px;height:8px;border-radius:50%;background:#10b981;flex-shrink:0}
+.dot.amber{background:#f59e0b;animation:pulse 1s infinite}
+.dot.red{background:#ef4444}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.alert-badge{background:#7f1d1d;border:1px solid #ef4444;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;color:#fca5a5}
+.nav{background:#161b27;border-bottom:1px solid #1e2535;padding:0 24px;overflow-x:auto}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;gap:4px;white-space:nowrap}
+.nav-btn{background:transparent;border:none;border-bottom:2px solid transparent;color:#64748b;padding:12px 16px;cursor:pointer;font-size:13px;font-weight:500}
+.nav-btn.active{background:#1e2d4a;border-bottom-color:#3b82f6;color:#93c5fd}
+.nav-btn.red{color:#fca5a5}
+.nav-btn.purple{color:#c084fc}
+.content{max-width:1200px;margin:0 auto;padding:24px}
+.card{background:#161b27;border:1px solid #1e2535;border-radius:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat{background:#161b27;border:1px solid #1e2535;border-radius:12px;padding:20px}
+.two{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.slabel{font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;color:#94a3b8;font-weight:500;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.fwrap{max-width:560px}
+.fcard{background:#161b27;border:1px solid #1e2535;border-radius:12px;padding:24px}
+.btn{border:none;border-radius:8px;padding:12px;color:white;font-weight:600;font-size:15px;cursor:pointer;width:100%}
+.btn-blue{background:linear-gradient(135deg,#1d4ed8,#3b82f6)}
+.btn-green{background:linear-gradient(135deg,#065f46,#10b981)}
+.btn-teal{background:linear-gradient(135deg,#1e3a8a,#3b82f6)}
+.btn-amber{background:linear-gradient(135deg,#78350f,#f59e0b)}
+.btn-purple{background:linear-gradient(135deg,#4c1d95,#8b5cf6)}
+.btn-indigo{background:linear-gradient(135deg,#1e3a8a,#6366f1)}
+.tbl-hdr{display:grid;padding:12px 20px;border-bottom:1px solid #1e2535;font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.tbl-row{display:grid;padding:14px 20px;border-bottom:1px solid #1e2535;align-items:center;font-size:13px}
+.badge{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block}
+.b-out{background:#1e3a5f;color:#93c5fd}
+.b-in{background:#064e3b;color:#6ee7b7}
+.b-del{background:#1e3a1e;color:#86efac}
+.b-cor{background:#2d1f00;color:#fcd34d}
+.b-low{background:#451a03;color:#fcd34d;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;display:inline-block}
+.b-crit{background:#7f1d1d;color:#fca5a5;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;display:inline-block}
+.b-ord{background:#064e3b;color:#6ee7b7;padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700}
+.b-lo{background:#7f1d1d;color:#fca5a5;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:6px}
+.qrow{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #1e2535}
+.qbtns{display:flex;align-items:center;gap:8px}
+.qbtn{width:32px;height:32px;background:#1e2535;border:none;border-radius:6px;color:#e2e8f0;font-size:18px;cursor:pointer;flex-shrink:0;line-height:1}
+.qinp{width:60px!important;text-align:center;border-radius:6px;padding:6px;font-size:15px;font-family:monospace;font-weight:600}
+.dsum{background:#1e2d4a;border:1px solid #3b82f6;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px}
+.acard{border-radius:12px;padding:20px;margin-bottom:12px;display:flex;align-items:center;gap:14px}
+.acard.warn{background:#161b27;border:1px solid #3b1f1f}
+.acard.crit{background:#1a0a0a;border:1px solid #7f1d1d}
+.empty{padding:40px;text-align:center;color:#64748b}
+.toast{position:fixed;bottom:24px;right:24px;border-radius:10px;padding:12px 20px;font-size:14px;color:white;z-index:1000;box-shadow:0 8px 32px rgba(0,0,0,.5);display:none}
+.toast.show{display:block}
+.toast.ok{background:#064e3b;border:1px solid #10b981}
+.toast.err{background:#7f1d1d;border:1px solid #ef4444}
+.toast.inf{background:#1e3a5f;border:1px solid #3b82f6}
+.wrow{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #1e2535}
+.orow{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #1e2535;opacity:.7}
+.mob-btn{background:#065f46;border:1px solid #10b981;border-radius:7px;padding:7px 14px;color:#6ee7b7;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap;width:auto}
+.cat-hdr{padding:12px 20px;border-bottom:1px solid #1e2535;display:flex;align-items:center;gap:8px}
+.cdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.fr{display:flex;gap:10px}
+.fr select{width:auto;padding:8px 12px;font-size:13px}
+.hidden{display:none!important}
+.atabs{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid #1e2535}
+.atab{background:transparent;border:none;border-bottom:2px solid transparent;color:#64748b;padding:10px 16px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:-1px}
+.atab.active{border-bottom-color:#8b5cf6;color:#c084fc}
+.lock{max-width:400px;margin:60px auto;text-align:center}
+.dbtn{background:#7f1d1d;border:1px solid #ef4444;border-radius:7px;padding:6px 14px;color:#fca5a5;font-size:12px;cursor:pointer;font-weight:600;width:auto;white-space:nowrap}
+.spin{width:32px;height:32px;border:3px solid #1e2535;border-top-color:#3b82f6;border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 16px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.mono{font-family:monospace}
+.bar-row{margin-bottom:12px}
+.bar-t{height:4px;background:#1e2535;border-radius:2px;overflow:hidden}
+.bar-f{height:100%;border-radius:2px}
+@media(max-width:800px){.grid4{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">&#9855;</div>
+      <div>
+        <div class="logo-title">P-Store Tracker</div>
+        <div class="logo-sub">MOBILITY EQUIPMENT MANAGEMENT</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="sync-wrap"><span class="dot amber" id="syncDot"></span><span id="syncTxt">Connecting...</span></div>
+      <div id="alertBadge" class="alert-badge hidden" onclick="go('alerts')"></div>
+    </div>
+  </div>
+</div>
+<div class="nav"><div class="nav-inner" id="nav"></div></div>
+<div class="content" id="main"></div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+var SURL="https://aaelyhypdpqdgtmiunim.supabase.co";
+var SKEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhZWx5aHlwZHBxZGd0bWl1bmltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxMDUzNzYsImV4cCI6MjA5MTY4MTM3Nn0.OYEnEjlJ0usa57A2aPoHqDYSIM33uMMX2lZii1ERszw";
+var db = supabase.createClient(SURL, SKEY);
+
+// ── State ─────────────────────────────────────────────────────────────────────
+var CATALOG=[], stock={}, log=[], ordered=[], thresholds={}, audits=[];
+var WARDS=["CDU","Ainderby","Romanby","Rutson","GARA"];
+var COLORS={Frames:"#3b82f6",Crutches:"#8b5cf6",Sticks:"#06b6d4",Commodes:"#f59e0b","Toilet Aids":"#10b981"};
+var view="dashboard", loading=true;
+var soF={ward:"",eq:"",qty:1,by:"",notes:""};
+var reF={ward:"",eq:"",qty:1,by:"",notes:""};
+var deliv={}, logW="All", logC="All";
+var auditN={}, auditNotes="";
+var corrN={};
+var adminPw="InpatientTherapy123", adminIn=false, adminPwIn="", adminTab="correct";
+var addF={name:"",variant:"",cat:"",newCat:"",qty:0,min:1};
+var pollTimer;
+
+// ── DB helpers ────────────────────────────────────────────────────────────────
+function qget(t,cb){
+  var q=db.from(t).select("*");
+  if(t==="ps_log") q=db.from(t).select("*").order("created_at",{ascending:false}).limit(300);
+  else if(t==="ps_audits") q=db.from(t).select("*").order("created_at",{ascending:false}).limit(52);
+  q.then(function(r){cb(r.error?[]:r.data||[])}).catch(function(){cb([])});
+}
+function qups(t,row,col,done){
+  db.from(t).upsert(row,{onConflict:col}).then(function(r){if(done)done(r.error);}).catch(function(e){if(done)done(e);});
+}
+function qins(t,row,done){
+  db.from(t).insert(row).then(function(r){if(done)done(r.error);}).catch(function(e){if(done)done(e);});
+}
+function qdel(t,col,val,done){
+  db.from(t).delete().eq(col,val).then(function(r){if(done)done(r.error);}).catch(function(e){if(done)done(e);});
+}
+function setSetting(k,v){ qups("ps_settings",{key:k,value:String(v)},"key",null); }
+function saveOrdered(){ setSetting("ordered",JSON.stringify(ordered)); }
+
+// ── Sync indicator ────────────────────────────────────────────────────────────
+function syncDot(s){
+  var d=document.getElementById("syncDot"), t=document.getElementById("syncTxt");
+  if(!d)return;
+  d.className="dot"+(s==="ok"?"":" "+(s==="saving"?"amber":"red"));
+  t.textContent=s==="ok"?"Live":s==="saving"?"Saving...":"Offline";
+}
+
+// ── Load ──────────────────────────────────────────────────────────────────────
+function loadAll(){
+  var done=0, total=5;
+  function check(){ if(++done===total){ finishLoad(); } }
+  var rawCat=[], rawStock=[], rawLog=[], rawSettings=[], rawAudits=[];
+  qget("ps_catalog",function(d){rawCat=d;check();});
+  qget("ps_stock",function(d){rawStock=d;check();});
+  qget("ps_log",function(d){rawLog=d;check();});
+  qget("ps_settings",function(d){rawSettings=d;check();});
+  qget("ps_audits",function(d){rawAudits=d;check();});
+
+  function finishLoad(){
+    // Catalog
+    var catRows=rawCat.filter(function(r){return r&&r.item_id;});
+    if(catRows.length){
+      CATALOG=catRows.map(function(r){return{id:r.item_id,name:r.name,variant:r.variant,cat:r.cat,min:r.min_stock||1};});
+    } else {
+      CATALOG=defaultCatalog();
+      var rows=CATALOG.map(function(e){return{item_id:e.id,name:e.name,variant:e.variant,cat:e.cat,min_stock:e.min};});
+      db.from("ps_catalog").insert(rows).then(function(){});
+    }
+    // Stock
+    stock={};
+    rawStock.forEach(function(r){if(r&&r.item_id!==undefined)stock[r.item_id]=r.qty;});
+    CATALOG.forEach(function(e){if(stock[e.id]===undefined)stock[e.id]=0;});
+    // Log
+    log=rawLog.filter(function(r){return r&&r.type;}).map(function(r){
+      return{id:r.id,type:r.type,ward:r.ward||"",eqId:r.item_id||"",eqName:r.equip_name||"",qty:r.qty||0,by:r.signed_by||"",notes:r.notes||"",date:r.display_date||""};
+    });
+    // Settings
+    thresholds={}; ordered=[];
+    rawSettings.forEach(function(r){
+      if(!r)return;
+      if(r.key==="ordered"){try{ordered=JSON.parse(r.value);}catch(e){}}
+      else if(r.key&&r.key.indexOf("thr_")===0){thresholds[r.key.slice(4)]=parseInt(r.value)||0;}
+    });
+    CATALOG.forEach(function(e){if(thresholds[e.id]===undefined)thresholds[e.id]=e.min;});
+    // Audits
+    audits=rawAudits.filter(function(r){return r;}).map(function(r){
+      var d=[];try{d=JSON.parse(r.discrepancies||"[]");}catch(e){}
+      return{id:r.id,date:r.display_date||"",notes:r.notes||"",disc:d};
+    });
+    // Reset UI state
+    deliv={}; auditN={}; corrN={};
+    CATALOG.forEach(function(e){deliv[e.id]=0; auditN[e.id]=stock[e.id]||0; corrN[e.id]=stock[e.id]||0;});
+    cleanOrdered();
+    loading=false;
+    syncDot("ok");
+    render();
+  }
+}
+
+function defaultCatalog(){
+  return[
+    {id:"wzf-s",name:"Zimmer Frame",variant:"Small Wheeled",cat:"Frames",min:3},
+    {id:"wzf-m",name:"Zimmer Frame",variant:"Medium Wheeled",cat:"Frames",min:4},
+    {id:"wzf-l",name:"Zimmer Frame",variant:"Large Wheeled",cat:"Frames",min:3},
+    {id:"crutch",name:"Crutches",variant:"Standard Axillary",cat:"Crutches",min:5},
+    {id:"wstick",name:"Walking Stick",variant:"Standard",cat:"Sticks",min:5},
+    {id:"wstick-q",name:"Walking Stick",variant:"Quadripod",cat:"Sticks",min:3},
+    {id:"commode-s",name:"Commode",variant:"Static",cat:"Commodes",min:2},
+    {id:"commode-g",name:"Commode",variant:"Glide-About",cat:"Commodes",min:2},
+    {id:"rts",name:"Raised Toilet Seat",variant:"Standard",cat:"Toilet Aids",min:4},
+    {id:"rts-a",name:"Raised Toilet Seat",variant:"With Arms",cat:"Toilet Aids",min:3}
+  ];
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function now(){var d=new Date();return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})+" "+d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});}
+function getEq(id){for(var i=0;i<CATALOG.length;i++){if(CATALOG[i].id===id)return CATALOG[i];}return null;}
+function thr(id){return thresholds[id]!==undefined?thresholds[id]:(getEq(id)?getEq(id).min:0);}
+function cats(){var s={},r=[];CATALOG.forEach(function(e){if(!s[e.cat]){s[e.cat]=1;r.push(e.cat);}});return r;}
+function alerts(){return CATALOG.filter(function(e){return(stock[e.id]||0)<=thr(e.id);}).map(function(e){return{id:e.id,name:e.name+" ("+e.variant+")",cat:e.cat,cur:stock[e.id]||0,min:thr(e.id),crit:(stock[e.id]||0)===0};});}
+function cleanOrdered(){ordered=ordered.filter(function(id){var x=getEq(id);return x&&(stock[id]||0)<=thr(id);});}
+function ff(lbl,html){return'<div class="field"><label>'+lbl+'</label>'+html+'</div>';}
+function wSel(val,fn){var o='<option value="">- Select -</option>';WARDS.forEach(function(w){o+='<option value="'+w+'"'+(val===w?" selected":"")+'>'+w+'</option>';});return'<select onchange="'+fn+'">'+o+'</select>';}
+function eSel(val,fn,showStock){var o='<option value="">- Select -</option>';CATALOG.forEach(function(e){var l=e.name+' ('+e.variant+')'+(showStock?' - '+(stock[e.id]||0)+' in stock':'');o+='<option value="'+e.id+'"'+(val===e.id?" selected":"")+'>'+l+'</option>';});return'<select onchange="'+fn+'">'+o+'</select>';}
+var toastT;
+function toast(msg,type){var t=document.getElementById("toast");t.textContent=msg;t.className="toast show "+(type||"ok");clearTimeout(toastT);toastT=setTimeout(function(){t.className="toast";},3000);}
+function go(v){view=v;render();}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+function doSignOut(){
+  if(!soF.ward||!soF.eq||soF.qty<1){toast("Please fill all required fields","err");return;}
+  var cur=stock[soF.eq]||0;
+  if(soF.qty>cur){toast("Only "+cur+" in stock","err");return;}
+  var e=getEq(soF.eq); syncDot("saving");
+  stock[soF.eq]-=soF.qty;
+  var entry={type:"OUT",ward:soF.ward,eqId:soF.eq,eqName:e.name+" ("+e.variant+")",qty:soF.qty,by:soF.by||"Unknown",notes:soF.notes,date:now()};
+  log.unshift(Object.assign({id:Date.now()},entry));
+  soF={ward:"",eq:"",qty:1,by:"",notes:""};
+  cleanOrdered(); render();
+  qins("ps_log",{type:entry.type,ward:entry.ward,item_id:entry.eqId,equip_name:entry.eqName,qty:entry.qty,signed_by:entry.by,notes:entry.notes,display_date:entry.date},null);
+  qups("ps_stock",{item_id:entry.eqId,qty:stock[entry.eqId]},"item_id",function(err){syncDot(err?"red":"ok");});
+  saveOrdered();
+  toast(entry.qty+" x "+e.name+" signed out to "+entry.ward);
+}
+
+function doReturn(){
+  if(!reF.ward||!reF.eq||reF.qty<1){toast("Please fill all required fields","err");return;}
+  var e=getEq(reF.eq); syncDot("saving");
+  stock[reF.eq]=(stock[reF.eq]||0)+reF.qty;
+  var entry={type:"IN",ward:reF.ward,eqId:reF.eq,eqName:e.name+" ("+e.variant+")",qty:reF.qty,by:reF.by||"Unknown",notes:reF.notes,date:now()};
+  log.unshift(Object.assign({id:Date.now()},entry));
+  reF={ward:"",eq:"",qty:1,by:"",notes:""};
+  cleanOrdered(); render();
+  qins("ps_log",{type:entry.type,ward:entry.ward,item_id:entry.eqId,equip_name:entry.eqName,qty:entry.qty,signed_by:entry.by,notes:entry.notes,display_date:entry.date},null);
+  qups("ps_stock",{item_id:entry.eqId,qty:stock[entry.eqId]},"item_id",function(err){syncDot(err?"red":"ok");});
+  toast(entry.qty+" x "+e.name+" returned from "+entry.ward,"inf");
+}
+
+function doDelivery(){
+  var changes=CATALOG.filter(function(e){return deliv[e.id]>0;});
+  if(!changes.length){toast("No quantities entered","err");return;}
+  syncDot("saving"); var ts=now();
+  changes.forEach(function(e){
+    stock[e.id]=(stock[e.id]||0)+deliv[e.id];
+    var entry={type:"DELIVERY",ward:"P-Store",item_id:e.id,equip_name:e.name+" ("+e.variant+")",qty:deliv[e.id],signed_by:"",notes:"Stock delivery",display_date:ts};
+    log.unshift({id:Date.now()+Math.random(),type:"DELIVERY",ward:"P-Store",eqId:e.id,eqName:e.name+" ("+e.variant+")",qty:deliv[e.id],by:"",notes:"Stock delivery",date:ts});
+    qins("ps_log",entry,null);
+    qups("ps_stock",{item_id:e.id,qty:stock[e.id]},"item_id",null);
+    deliv[e.id]=0;
+  });
+  cleanOrdered(); syncDot("ok"); render();
+  toast("Delivery recorded - "+changes.length+" item type"+(changes.length>1?"s":"")+" updated");
+}
+
+function markOrdered(id){
+  if(ordered.indexOf(id)===-1)ordered.push(id);
+  render(); saveOrdered();
+  toast(getEq(id).name+" marked as ordered");
+}
+
+function doAudit(){
+  var disc=[];
+  CATALOG.forEach(function(e){var exp=stock[e.id]||0,act=auditN[e.id]||0;if(exp!==act)disc.push({id:e.id,name:e.name+" ("+e.variant+")",expected:exp,actual:act,diff:act-exp});});
+  var a={id:Date.now(),date:now(),notes:auditNotes,disc:disc};
+  audits.unshift(a); auditNotes=""; render();
+  qins("ps_audits",{notes:a.notes,display_date:a.date,discrepancies:JSON.stringify(disc)},null);
+  toast("Audit saved - "+disc.length+" discrepanc"+(disc.length===1?"y":"ies")+" found");
+}
+
+function doCorrect(){
+  var changes=[];
+  CATALOG.forEach(function(e){var nv=corrN[e.id]||0,ov=stock[e.id]||0;if(nv!==ov)changes.push({e:e,old:ov,new:nv});});
+  if(!changes.length){toast("No changes made","err");return;}
+  syncDot("saving"); var ts=now();
+  changes.forEach(function(c){
+    stock[c.e.id]=c.new;
+    var entry={type:"CORRECTION",ward:"P-Store",item_id:c.e.id,equip_name:c.e.name+" ("+c.e.variant+")",qty:c.new-c.old,signed_by:"",notes:"Correction: "+c.old+" to "+c.new,display_date:ts};
+    log.unshift({id:Date.now()+Math.random(),type:"CORRECTION",ward:"P-Store",eqId:c.e.id,eqName:c.e.name+" ("+c.e.variant+")",qty:c.new-c.old,by:"",notes:"Correction: "+c.old+" to "+c.new,date:ts});
+    qins("ps_log",entry,null);
+    qups("ps_stock",{item_id:c.e.id,qty:c.new},"item_id",null);
+  });
+  corrN={}; CATALOG.forEach(function(e){corrN[e.id]=stock[e.id]||0;});
+  cleanOrdered(); syncDot("ok"); render();
+  toast(changes.length+" item"+(changes.length>1?"s":"")+" corrected");
+}
+
+function saveThr(id){
+  var el=document.getElementById("thr_"+id);
+  var val=el?parseInt(el.value):0; if(isNaN(val)||val<0)val=0;
+  thresholds[id]=val;
+  setSetting("thr_"+id,val);
+  render(); toast(getEq(id).name+" threshold updated to "+val);
+}
+
+function addEquip(){
+  var name=addF.name.trim(),variant=addF.variant.trim();
+  var cat=addF.cat==="__new__"?addF.newCat.trim():addF.cat;
+  var qty=parseInt(addF.qty)||0,min=parseInt(addF.min)||1;
+  if(!name||!variant||!cat){toast("Name, variant and category required","err");return;}
+  var id="custom_"+Date.now();
+  CATALOG.push({id:id,name:name,variant:variant,cat:cat,min:min});
+  stock[id]=qty; thresholds[id]=min; deliv[id]=0; auditN[id]=qty; corrN[id]=qty;
+  addF={name:"",variant:"",cat:"",newCat:"",qty:0,min:1};
+  db.from("ps_catalog").insert({item_id:id,name:name,variant:variant,cat:cat,min_stock:min}).then(function(){});
+  qups("ps_stock",{item_id:id,qty:qty},"item_id",null);
+  setSetting("thr_"+id,min);
+  render(); toast(name+" ("+variant+") added");
+}
+
+function removeEquip(id){
+  var e=getEq(id); if(!e)return;
+  if(!confirm("Remove "+e.name+" ("+e.variant+")? This cannot be undone."))return;
+  CATALOG=CATALOG.filter(function(x){return x.id!==id;});
+  delete stock[id]; delete thresholds[id]; delete deliv[id]; delete auditN[id]; delete corrN[id];
+  var i=ordered.indexOf(id); if(i>-1)ordered.splice(i,1);
+  qdel("ps_catalog","item_id",id,null);
+  qdel("ps_stock","item_id",id,null);
+  render(); toast(e.name+" removed");
+}
+
+function checkAdminPw(){
+  if(adminPwIn===adminPw){adminIn=true;adminPwIn="";toast("Admin access granted");render();}
+  else{toast("Incorrect password","err");adminPwIn="";render();}
+}
+function lockAdmin(){adminIn=false;render();}
+function setATab(t){adminTab=t;render();}
+function setSoF(k,v){soF[k]=(k==="qty"?parseInt(v)||1:v);}
+function setReF(k,v){reF[k]=(k==="qty"?parseInt(v)||1:v);}
+function adjDel(id,d){deliv[id]=Math.max(0,(deliv[id]||0)+d);render();}
+function setDel(id,v){deliv[id]=Math.max(0,parseInt(v)||0);}
+function adjAudit(id,d){auditN[id]=Math.max(0,(auditN[id]||0)+d);render();}
+function setAudit(id,v){auditN[id]=Math.max(0,parseInt(v)||0);}
+function adjCorr(id,d){corrN[id]=Math.max(0,(corrN[id]||0)+d);render();}
+function setCorr(id,v){corrN[id]=Math.max(0,parseInt(v)||0);}
+function setAddF(k,v){addF[k]=v;}
+
+// ── Views ─────────────────────────────────────────────────────────────────────
+function vLoading(){return'<div style="padding:60px;text-align:center;color:#64748b"><div class="spin"></div><div>Connecting to live database...</div></div>';}
+
+function vDashboard(){
+  var al=alerts(),cs=cats();
+  var tot=0; for(var k in stock)tot+=stock[k]||0;
+  var today=new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+  var outs=log.filter(function(e){return e.type==="OUT"&&e.date.indexOf(today)===0;}).length;
+  var pend=al.filter(function(a){return ordered.indexOf(a.id)===-1;}).length;
+  var stats=[
+    {l:"Total Items In Stock",v:tot,i:"&#128230;",c:"#3b82f6"},
+    {l:"Low Stock Items",v:al.length,i:"&#9888;&#65039;",c:"#ef4444"},
+    {l:"Sign-Outs Today",v:outs,i:"&#128228;",c:"#8b5cf6"},
+    {l:"Pending Reorders",v:pend,i:"&#128722;",c:"#f59e0b"}
+  ].map(function(s){return'<div class="stat"><div style="font-size:24px;margin-bottom:8px">'+s.i+'</div><div style="font-size:28px;font-weight:700;color:'+s.c+'">'+s.v+'</div><div style="font-size:12px;color:#64748b;margin-top:4px">'+s.l+'</div></div>';}).join("");
+  var bars=CATALOG.map(function(e){
+    var q=stock[e.id]||0,low=q<=thr(e.id),pct=Math.min(100,(q/Math.max(thr(e.id)*3,1))*100),col=COLORS[e.cat]||"#94a3b8";
+    return'<div class="bar-row"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:'+col+';flex-shrink:0"></div><span style="font-size:13px">'+e.name+' <span style="color:#64748b">('+e.variant+')</span></span>'+(low?'<span class="b-lo">LOW</span>':'')+'</div><span class="mono" style="font-size:13px;color:'+(low?"#ef4444":"#e2e8f0")+';font-weight:600">'+q+'</span></div><div class="bar-t"><div class="bar-f" style="width:'+pct+'%;background:'+(low?"#ef4444":col)+'"></div></div></div>';
+  }).join("");
+  var usage={};
+  log.filter(function(e){return e.type==="OUT";}).forEach(function(e){if(!usage[e.ward])usage[e.ward]={t:0,i:{}}; usage[e.ward].t+=e.qty; usage[e.ward].i[e.eqName]=(usage[e.ward].i[e.eqName]||0)+e.qty;});
+  var top=Object.keys(usage).map(function(w){return[w,usage[w]];}).sort(function(a,b){return b[1].t-a[1].t;}).slice(0,6);
+  var wrows=top.length?top.map(function(p){return'<div class="wrow"><div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="font-size:13px;font-weight:500">'+p[0]+'</span><span class="mono" style="font-size:13px;color:#93c5fd">'+p[1].t+' items</span></div><div style="font-size:11px;color:#64748b">'+Object.keys(p[1].i).slice(0,2).map(function(k){return k+": "+p[1].i[k];}).join(" - ")+'</div></div>';}).join(""):'<div style="color:#64748b;font-size:13px">No sign-outs yet</div>';
+  return'<div class="grid4">'+stats+'</div><div class="two"><div class="card" style="padding:20px"><div class="slabel" style="margin-bottom:16px">Current Stock Levels</div>'+bars+'</div><div class="card" style="padding:20px"><div class="slabel" style="margin-bottom:16px">Top Signing Wards</div>'+wrows+'</div></div>';
+}
+
+function vSignOut(){
+  return'<div class="fwrap"><div style="font-size:20px;font-weight:700;margin-bottom:6px">Sign Out Equipment</div><div style="color:#64748b;font-size:14px;margin-bottom:24px">Record equipment leaving the P-Store</div><div class="fcard">'+
+    ff("Ward *",wSel(soF.ward,"setSoF('ward',this.value)"))+
+    ff("Equipment *",eSel(soF.eq,"setSoF('eq',this.value)",true))+
+    ff("Quantity *",'<input type="number" min="1" value="'+soF.qty+'" oninput="setSoF(\'qty\',this.value)">')+
+    ff("Signed Out By *",'<input type="text" value="'+esc(soF.by)+'" placeholder="e.g. Jane Smith" oninput="setSoF(\'by\',this.value)">')+
+    ff("Notes",'<input type="text" value="'+esc(soF.notes)+'" placeholder="Optional" oninput="setSoF(\'notes\',this.value)">')+
+    '<button class="btn btn-blue" onclick="doSignOut()">&#128228; Sign Out Equipment</button></div></div>';
+}
+
+function vReturn(){
+  return'<div class="fwrap"><div style="font-size:20px;font-weight:700;margin-bottom:6px">Return Equipment</div><div style="color:#64748b;font-size:14px;margin-bottom:24px">Record equipment returned to the P-Store</div><div class="fcard">'+
+    ff("Returning Ward *",wSel(reF.ward,"setReF('ward',this.value)"))+
+    ff("Equipment *",eSel(reF.eq,"setReF('eq',this.value)",false))+
+    ff("Quantity *",'<input type="number" min="1" value="'+reF.qty+'" oninput="setReF(\'qty\',this.value)">')+
+    ff("Returned By *",'<input type="text" value="'+esc(reF.by)+'" placeholder="e.g. Jane Smith" oninput="setReF(\'by\',this.value)">')+
+    ff("Notes",'<input type="text" value="'+esc(reF.notes)+'" placeholder="e.g. Cleaned, needs service" oninput="setReF(\'notes\',this.value)">')+
+    '<button class="btn btn-green" onclick="doReturn()">&#128217; Return Equipment</button></div></div>';
+}
+
+function vDelivery(){
+  var cs=cats();
+  var sumItems=CATALOG.filter(function(e){return deliv[e.id]>0;});
+  var sum=sumItems.length?'<div class="dsum"><strong style="color:#93c5fd">Delivery summary: </strong><span style="color:#cbd5e1">'+sumItems.map(function(e){return deliv[e.id]+" x "+e.name+" ("+e.variant+")";}).join(", ")+'</span></div>':"";
+  var secs=cs.map(function(cat){
+    var rows=CATALOG.filter(function(e){return e.cat===cat;}).map(function(e){
+      var q=deliv[e.id]||0,cur=stock[e.id]||0;
+      var qs="background:"+(q>0?"#1e3a5f":"#0f1117")+";border:1px solid "+(q>0?"#3b82f6":"#1e2535")+";color:"+(q>0?"#93c5fd":"#e2e8f0");
+      return'<div class="qrow"><div><div style="font-size:14px">'+e.name+' <span style="color:#64748b">('+e.variant+')</span></div><div style="font-size:12px;color:#64748b;margin-top:2px">In stock: <span class="mono" style="color:#e2e8f0">'+cur+'</span>'+(q>0?'<span style="color:#6ee7b7;margin-left:6px">&#8594; will be '+(cur+q)+'</span>':"")+'</div></div><div class="qbtns"><button class="qbtn" onclick="adjDel(\''+e.id+'\',-1)">&#8722;</button><input type="number" min="0" value="'+q+'" class="qinp" style="'+qs+'" oninput="setDel(\''+e.id+'\',this.value);render()"><button class="qbtn" onclick="adjDel(\''+e.id+'\',1)">+</button></div></div>';
+    }).join("");
+    return'<div class="card" style="margin-bottom:16px;overflow:hidden"><div class="cat-hdr"><div class="cdot" style="background:'+(COLORS[cat]||"#94a3b8")+'"></div><span class="slabel" style="margin:0">'+cat+'</span></div>'+rows+'</div>';
+  }).join("");
+  return'<div style="max-width:700px"><div style="font-size:20px;font-weight:700;margin-bottom:6px">Record Delivery</div><div style="color:#64748b;font-size:14px;margin-bottom:24px">Enter quantities received</div>'+secs+sum+'<button class="btn btn-teal" onclick="doDelivery()">&#128666; Confirm Delivery &amp; Update Stock</button></div>';
+}
+
+function vLog(){
+  var cs=cats();
+  var filt=log.filter(function(e){return(logW==="All"||e.ward===logW)&&(logC==="All"||((getEq(e.eqId)||{}).cat)===logC);});
+  var rows=filt.slice(0,100).map(function(e){
+    var bc=e.type==="OUT"?"b-out":e.type==="DELIVERY"?"b-del":e.type==="CORRECTION"?"b-cor":"b-in";
+    var bt=e.type==="OUT"?"OUT":e.type==="DELIVERY"?"DEL":e.type==="CORRECTION"?"CORR":"IN";
+    return'<div class="tbl-row" style="grid-template-columns:90px 1fr 1fr 55px 130px 1fr"><span class="badge '+bc+'">'+bt+'</span><span>'+esc(e.eqName)+'</span><span style="color:#94a3b8">'+esc(e.ward)+'</span><span class="mono" style="font-weight:600">'+e.qty+'</span><span class="mono" style="color:#64748b;font-size:11px">'+esc(e.date)+'</span><span style="color:#64748b">'+esc(e.by||e.notes||"—")+'</span></div>';
+  }).join("")||'<div class="empty">No activity yet</div>';
+  var wo='<option value="All">All Wards</option>'+WARDS.map(function(w){return'<option'+(logW===w?" selected":"")+'>'+w+'</option>';}).join("");
+  var co='<option value="All">All Categories</option>'+cs.map(function(c){return'<option'+(logC===c?" selected":"")+'>'+c+'</option>';}).join("");
+  return'<div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px"><div><div style="font-size:20px;font-weight:700">Activity Log</div><div style="color:#64748b;font-size:14px">All sign-outs, returns and deliveries</div></div><div class="fr"><select onchange="logW=this.value;render()">'+wo+'</select><select onchange="logC=this.value;render()">'+co+'</select></div></div><div class="card" style="overflow:hidden"><div class="tbl-hdr" style="grid-template-columns:90px 1fr 1fr 55px 130px 1fr"><span>Type</span><span>Equipment</span><span>Ward</span><span>Qty</span><span>Date</span><span>Signed By</span></div>'+rows+'</div></div>';
+}
+
+function vReorder(){
+  var al=alerts();
+  var pend=al.filter(function(a){return ordered.indexOf(a.id)===-1;});
+  var ord=al.filter(function(a){return ordered.indexOf(a.id)!==-1;});
+  var pr=pend.length?pend.map(function(a){return'<div class="tbl-row" style="grid-template-columns:1fr 70px 70px 130px 160px;'+(a.crit?"background:#130a0a;":"")+'"><div><div style="font-size:14px;font-weight:500">'+esc(a.name)+'</div><div style="font-size:12px;color:#64748b">'+a.cat+'</div></div><span class="mono" style="font-weight:700;color:'+(a.crit?"#ef4444":"#f59e0b")+';font-size:16px">'+a.cur+'</span><span class="mono" style="font-size:13px;color:#64748b">'+a.min+'</span><span class="'+(a.crit?"b-crit":"b-low")+'">'+(a.crit?"OUT OF STOCK":"LOW STOCK")+'</span><div style="text-align:right"><button class="mob-btn" onclick="markOrdered(\''+a.id+'\')">&#10003; Mark Ordered</button></div></div>';}).join(""):'<div class="empty" style="padding:28px">&#9989; Nothing pending</div>';
+  var os=ord.length?'<div class="slabel" style="margin-top:20px">Ordered - Awaiting Delivery</div><div class="card" style="overflow:hidden;margin-bottom:16px">'+ord.map(function(a){return'<div class="orow"><div style="display:flex;align-items:center;gap:10px"><span style="color:#6ee7b7">&#10003;</span><div><div style="font-size:14px;font-weight:500">'+esc(a.name)+'</div><div style="font-size:12px;color:#64748b">'+a.cur+' remaining</div></div></div><span class="b-ord">ORDERED</span></div>';}).join("")+'</div>':"";
+  var empty=al.length===0?'<div class="card" style="padding:40px;text-align:center"><div style="font-size:40px;margin-bottom:12px">&#9989;</div><div style="font-size:15px;font-weight:600">All stock levels are healthy</div></div>':"";
+  return'<div><div style="font-size:20px;font-weight:700;margin-bottom:6px">Reorder List</div><div style="color:#64748b;font-size:14px;margin-bottom:24px">Items below minimum stock threshold</div><div class="slabel">Needs Ordering '+(pend.length?'<span style="background:#7f1d1d;color:#fca5a5;padding:2px 7px;border-radius:4px;margin-left:6px;font-size:11px">'+pend.length+'</span>':"")+'</div><div class="card" style="overflow:hidden;margin-bottom:20px"><div class="tbl-hdr" style="grid-template-columns:1fr 70px 70px 130px 160px"><span>Equipment</span><span>Stock</span><span>Min</span><span>Status</span><span></span></div>'+pr+'</div>'+os+empty+'</div>';
+}
+
+function vAudit(){
+  var cs=cats();
+  var secs=cs.map(function(cat){
+    var rows=CATALOG.filter(function(e){return e.cat===cat;}).map(function(e){
+      var sys=stock[e.id]||0,cnt=auditN[e.id]!==undefined?auditN[e.id]:sys,diff=cnt-sys;
+      var ds=diff!==0?'<span style="color:'+(diff>0?"#6ee7b7":"#f87171")+';margin-left:8px;font-size:12px;font-weight:600">'+(diff>0?"+":"")+diff+' vs system</span>':"";
+      return'<div class="qrow"><div><div style="font-size:14px">'+e.name+' <span style="color:#64748b">('+e.variant+')</span></div><div style="font-size:12px;color:#64748b;margin-top:2px">System: <span class="mono" style="color:#e2e8f0">'+sys+'</span>'+ds+'</div></div><div class="qbtns"><button class="qbtn" onclick="adjAudit(\''+e.id+'\',-1)">&#8722;</button><input type="number" min="0" value="'+cnt+'" class="qinp" style="background:#0f1117;border:1px solid #1e2535;color:#e2e8f0" oninput="setAudit(\''+e.id+'\',this.value);render()"><button class="qbtn" onclick="adjAudit(\''+e.id+'\',1)">+</button></div></div>';
+    }).join("");
+    return'<div class="card" style="margin-bottom:16px;overflow:hidden"><div class="cat-hdr"><div class="cdot" style="background:'+(COLORS[cat]||"#94a3b8")+'"></div><span class="slabel" style="margin:0">'+cat+'</span></div>'+rows+'</div>';
+  }).join("");
+  var dc=CATALOG.filter(function(e){return(auditN[e.id]||0)!==(stock[e.id]||0);}).length;
+  var ds=dc>0?'<div style="background:#1a0e00;border:1px solid #92400e;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#fde68a">&#9888; <strong>'+dc+' discrepanc'+(dc===1?"y":"ies")+'</strong> found.</div>':'<div style="background:#0a1a0a;border:1px solid #166534;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#86efac">&#10003; Physical count matches system count.</div>';
+  var past=audits.length?'<div style="margin-top:32px"><div style="font-size:16px;font-weight:700;margin-bottom:16px">Past Audit Records</div>'+audits.slice(0,10).map(function(a){var dh=a.disc&&a.disc.length?a.disc.map(function(d){return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2535;font-size:13px"><span>'+esc(d.name)+'</span><span>Expected <span class="mono">'+d.expected+'</span> / Found <span class="mono">'+d.actual+'</span> <span style="color:'+(d.diff>0?"#6ee7b7":"#f87171")+';font-weight:600">'+(d.diff>0?"+":"")+d.diff+'</span></span></div>';}).join(""):'<div style="padding:12px 0;font-size:13px;color:#64748b">No discrepancies</div>';return'<div class="card" style="margin-bottom:12px;overflow:hidden"><div style="padding:14px 20px;border-bottom:1px solid #1e2535;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:14px;font-weight:600">Audit - '+esc(a.date)+'</div>'+(a.notes?'<div style="font-size:12px;color:#64748b">'+esc(a.notes)+'</div>':"")+'</div><span style="background:'+(a.disc&&a.disc.length?"#451a03":"#064e3b")+';color:'+(a.disc&&a.disc.length?"#fcd34d":"#6ee7b7")+';padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700">'+(a.disc&&a.disc.length?a.disc.length+' DISCREPANC'+(a.disc.length===1?"Y":"IES"):"ALL CLEAR")+'</span></div><div style="padding:0 20px">'+dh+'</div></div>';}).join("")+'</div>':"";
+  return'<div style="max-width:700px"><div style="font-size:20px;font-weight:700;margin-bottom:6px">Weekly Audit</div><div style="color:#64748b;font-size:14px;margin-bottom:24px">Count every item physically and enter the actual number.</div>'+secs+ds+'<div class="field" style="margin-bottom:16px"><label>Audit Notes (optional)</label><input type="text" value="'+esc(auditNotes)+'" placeholder="e.g. Week 23, checked by J. Smith" oninput="auditNotes=this.value"></div><button class="btn btn-indigo" onclick="doAudit()">&#128203; Save Audit Record</button>'+past+'</div>';
+}
+
+function vAlerts(){
+  var al=alerts();
+  var cards=al.length?al.map(function(a){return'<div class="acard '+(a.crit?"crit":"warn")+'"><div style="font-size:28px">'+(a.crit?"&#128680;":"&#9888;&#65039;")+'</div><div style="flex:1"><div style="font-size:15px;font-weight:600">'+esc(a.name)+'</div><div style="font-size:13px;color:#64748b;margin-top:2px">'+(a.crit?"OUT OF STOCK":"Only "+a.cur+" remaining")+' &mdash; threshold: '+a.min+'</div></div></div>';}).join(""):'<div class="card" style="padding:28px;text-align:center;margin-bottom:24px"><div style="font-size:36px;margin-bottom:10px">&#9989;</div><div style="font-size:15px;font-weight:600">All stock levels are healthy</div></div>';
+  var trows=CATALOG.map(function(e){var q=stock[e.id]||0,t=thr(e.id),low=q<=t;return'<div style="display:grid;grid-template-columns:12px 1fr 60px 100px;gap:14px;align-items:center;padding:13px 20px;border-bottom:1px solid #1e2535;'+(low?"background:#130d00;":"")+'"><div style="width:9px;height:9px;border-radius:50%;background:'+(q===0?"#ef4444":low?"#f59e0b":"#10b981")+'"></div><div><div style="font-size:13px;font-weight:500">'+e.name+' <span style="color:#64748b">('+e.variant+')</span></div><div style="font-size:11px;color:#64748b">'+e.cat+'</div></div><div class="mono" style="font-size:14px;font-weight:700;color:'+(low?"#f87171":"#94a3b8")+'">'+q+'</div><span class="mono" style="font-size:14px;font-weight:700;color:#e2e8f0">'+t+'</span></div>';}).join("");
+  return'<div><div style="font-size:20px;font-weight:700;margin-bottom:6px">Stock Alerts</div><div style="color:#64748b;font-size:14px;margin-bottom:24px">Edit thresholds in the <strong style="color:#c084fc">Admin</strong> tab.</div>'+cards+'<div style="margin-top:24px"><div class="slabel">Thresholds</div><div class="card" style="overflow:hidden"><div style="display:grid;grid-template-columns:12px 1fr 60px 100px;gap:14px;padding:10px 20px;border-bottom:1px solid #1e2535;font-size:11px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:.5px"><span></span><span>Equipment</span><span>Stock</span><span>Threshold</span></div>'+trows+'</div></div></div>';
+}
+
+function vAdmin(){
+  if(!adminIn){
+    return'<div class="lock"><div style="font-size:48px;margin-bottom:16px">&#128274;</div><div style="font-size:20px;font-weight:700;margin-bottom:8px">Admin Access Required</div><div style="color:#64748b;font-size:14px;margin-bottom:28px">Enter the admin password to continue.</div><div class="fcard"><div class="field"><label>Password</label><input type="password" value="'+esc(adminPwIn)+'" placeholder="Enter password" oninput="adminPwIn=this.value" onkeydown="if(event.key===\'Enter\')checkAdminPw()"></div><button class="btn btn-purple" onclick="checkAdminPw()">&#128275; Unlock Admin</button></div></div>';
+  }
+  var cs=cats();
+  var tabs='<div class="atabs"><button class="atab'+(adminTab==="correct"?" active":"")+'" onclick="setATab(\'correct\')">&#9998; Correct Stock</button><button class="atab'+(adminTab==="thresholds"?" active":"")+'" onclick="setATab(\'thresholds\')">&#127988; Alert Thresholds</button><button class="atab'+(adminTab==="equipment"?" active":"")+'" onclick="setATab(\'equipment\')">&#128230; Manage Equipment</button><div style="flex:1"></div><button onclick="lockAdmin()" style="background:transparent;border:none;color:#64748b;font-size:12px;cursor:pointer;padding:10px 12px">&#128274; Lock</button></div>';
+  var body="";
+
+  if(adminTab==="correct"){
+    var secs=cs.map(function(cat){var rows=CATALOG.filter(function(e){return e.cat===cat;}).map(function(e){var cur=stock[e.id]||0,val=corrN[e.id]!==undefined?corrN[e.id]:cur,ch=val!==cur,diff=val-cur;var ds=ch?'<span style="color:'+(diff>0?"#6ee7b7":"#f87171")+';margin-left:8px;font-size:12px">'+(diff>0?"+":"")+diff+' vs current</span>':"";var qs="background:"+(ch?"#1e3a5f":"#0f1117")+";border:1px solid "+(ch?"#3b82f6":"#1e2535")+";color:"+(ch?"#93c5fd":"#e2e8f0");return'<div class="qrow"><div><div style="font-size:14px">'+e.name+' <span style="color:#64748b">('+e.variant+')</span></div><div style="font-size:12px;color:#64748b;margin-top:2px">System: <span class="mono" style="color:#e2e8f0">'+cur+'</span>'+ds+'</div></div><div class="qbtns"><button class="qbtn" onclick="adjCorr(\''+e.id+'\',-1)">&#8722;</button><input type="number" min="0" value="'+val+'" class="qinp" style="'+qs+'" oninput="setCorr(\''+e.id+'\',this.value);render()"><button class="qbtn" onclick="adjCorr(\''+e.id+'\',1)">+</button></div></div>';}).join("");return'<div class="card" style="margin-bottom:16px;overflow:hidden"><div class="cat-hdr"><div class="cdot" style="background:'+(COLORS[cat]||"#94a3b8")+'"></div><span class="slabel" style="margin:0">'+cat+'</span></div>'+rows+'</div>';}).join("");
+    var hc=CATALOG.some(function(e){return(corrN[e.id]||0)!==(stock[e.id]||0);});
+    var sum=hc?'<div class="dsum" style="background:#2d1f00;border-color:#f59e0b"><strong style="color:#fcd34d">Changes: </strong><span style="color:#e2e8f0">'+CATALOG.filter(function(e){return(corrN[e.id]||0)!==(stock[e.id]||0);}).map(function(e){var d=(corrN[e.id]||0)-(stock[e.id]||0);return e.name+': '+(d>0?"+":"")+d;}).join(", ")+'</span></div>':"";
+    body='<div style="background:#1a1200;border:1px solid #854d0e;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#fde68a">&#9888; Only use to correct genuine errors — not for sign-outs or returns.</div>'+secs+sum+'<button class="btn btn-amber" onclick="doCorrect()">&#9998; Apply Stock Corrections</button>';
+  }
+
+  if(adminTab==="thresholds"){
+    var trs=cs.map(function(cat){var rows=CATALOG.filter(function(e){return e.cat===cat;}).map(function(e){var q=stock[e.id]||0,t=thr(e.id),low=q<=t;return'<div style="display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-bottom:1px solid #1e2535;'+(low?"background:#130d00;":"")+'"><div><div style="font-size:14px">'+e.name+' <span style="color:#64748b">('+e.variant+')</span></div><div style="font-size:12px;color:#64748b;margin-top:2px">In stock: <span class="mono" style="color:'+(low?"#f87171":"#e2e8f0")+'">'+q+'</span></div></div><div style="display:flex;align-items:center;gap:8px"><label style="font-size:12px;color:#94a3b8;white-space:nowrap">Alert when &le;</label><input type="number" id="thr_'+e.id+'" min="0" value="'+t+'" style="width:70px;text-align:center;background:#0f1117;border:1px solid #334155;border-radius:6px;padding:6px;font-family:monospace;font-size:14px;font-weight:700;color:#e2e8f0"><button onclick="saveThr(\''+e.id+'\')" style="background:#065f46;border:1px solid #10b981;border-radius:6px;padding:6px 12px;color:#6ee7b7;font-size:12px;cursor:pointer;font-weight:600;width:auto">&#10003; Save</button></div></div>';}).join("");return'<div class="card" style="margin-bottom:16px;overflow:hidden"><div class="cat-hdr"><div class="cdot" style="background:'+(COLORS[cat]||"#94a3b8")+'"></div><span class="slabel" style="margin:0">'+cat+'</span></div>'+rows+'</div>';}).join("");
+    body='<div style="color:#64748b;font-size:13px;margin-bottom:16px">Alert fires when stock is at or below this number.</div>'+trs;
+  }
+
+  if(adminTab==="equipment"){
+    var co='<option value="">- Select category -</option>'+cs.map(function(c){return'<option value="'+esc(c)+'"'+(addF.cat===c?" selected":"")+'>'+esc(c)+'</option>';}).join("")+'<option value="__new__"'+(addF.cat==="__new__"?" selected":"")+'>+ New category...</option>';
+    var ncf=addF.cat==="__new__"?'<div class="field"><label>New Category Name *</label><input type="text" value="'+esc(addF.newCat)+'" placeholder="e.g. Wheelchairs" oninput="setAddF(\'newCat\',this.value)"></div>':"";
+    var af='<div class="card" style="padding:24px;margin-bottom:24px"><div style="font-size:15px;font-weight:600;margin-bottom:16px;color:#c084fc">&#43; Add New Equipment</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="field"><label>Name *</label><input type="text" value="'+esc(addF.name)+'" placeholder="e.g. Wheelchair" oninput="setAddF(\'name\',this.value)"></div><div class="field"><label>Variant *</label><input type="text" value="'+esc(addF.variant)+'" placeholder="e.g. Standard" oninput="setAddF(\'variant\',this.value)"></div></div><div class="field"><label>Category *</label><select onchange="setAddF(\'cat\',this.value)">'+co+'</select></div>'+ncf+'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="field"><label>Starting Stock</label><input type="number" min="0" value="'+addF.qty+'" oninput="setAddF(\'qty\',this.value)"></div><div class="field"><label>Alert Threshold</label><input type="number" min="0" value="'+addF.min+'" oninput="setAddF(\'min\',this.value)"></div></div><button class="btn btn-purple" onclick="addEquip()">&#43; Add Equipment</button></div>';
+    var ir=cs.map(function(cat){var rows=CATALOG.filter(function(e){return e.cat===cat;}).map(function(e){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #1e2535"><div><div style="font-size:14px;font-weight:500">'+esc(e.name)+' <span style="color:#64748b">('+esc(e.variant)+')</span></div><div style="font-size:12px;color:#64748b;margin-top:2px">Stock: <span class="mono">'+(stock[e.id]||0)+'</span> &middot; Threshold: <span class="mono">'+thr(e.id)+'</span></div></div><button class="dbtn" onclick="removeEquip(\''+e.id+'\')">&#128465; Remove</button></div>';}).join("");return'<div class="card" style="margin-bottom:12px;overflow:hidden"><div class="cat-hdr"><div class="cdot" style="background:'+(COLORS[cat]||"#94a3b8")+'"></div><span class="slabel" style="margin:0">'+cat+'</span></div>'+rows+'</div>';}).join("");
+    body=af+'<div class="slabel">Current Equipment</div>'+ir;
+  }
+
+  return'<div><div style="font-size:20px;font-weight:700;margin-bottom:6px">Admin</div><div style="color:#64748b;font-size:14px;margin-bottom:24px">Password-protected management tools</div>'+tabs+'<div style="max-width:760px">'+body+'</div></div>';
+}
+
+// ── Nav & Render ──────────────────────────────────────────────────────────────
+var NAVS=[["dashboard","&#128202; Dashboard"],["signout","&#128228; Sign Out"],["return","&#128217; Return"],["delivery","&#128666; Delivery"],["log","&#128203; Log"],["reorder","&#128722; Reorder"],["audit","&#128203; Audit"],["alerts","&#9888;&#65039; Alerts"],["admin","&#128274; Admin"]];
+
+function render(){
+  var al=alerts();
+  var b=document.getElementById("alertBadge");
+  if(al.length){b.className="alert-badge";b.textContent=al.length+" Low Stock Alert"+(al.length>1?"s":"");}
+  else{b.className="alert-badge hidden";}
+  var n="";
+  NAVS.forEach(function(x){
+    var k=x[0],isAl=k==="alerts"&&al.length>0,isAd=k==="admin";
+    n+='<button class="nav-btn'+(view===k?" active":"")+(isAl?" red":"")+(isAd?" purple":"")+'" onclick="go(\''+k+'\')">'+x[1]+(isAl?" ("+al.length+")":"")+'</button>';
+  });
+  document.getElementById("nav").innerHTML=n;
+  var h=loading?vLoading():view==="dashboard"?vDashboard():view==="signout"?vSignOut():view==="return"?vReturn():view==="delivery"?vDelivery():view==="log"?vLog():view==="reorder"?vReorder():view==="audit"?vAudit():view==="alerts"?vAlerts():vAdmin();
+  document.getElementById("main").innerHTML=h;
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+render();
+loadAll();
+setInterval(function(){if(!loading)loadAll();},15000);
+</script>
+</body>
+</html>
